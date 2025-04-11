@@ -1,0 +1,47 @@
+<div class="search-container mb-3">
+    <input 
+      type="text" 
+     
+      (input)="filterFeedbacks()" 
+      class="form-control" 
+      placeholder="Search feedback by word or date">
+  </div>
+  
+  <div *ngIf="filteredFeedbacks && filteredFeedbacks.length > 0; else noFeedbacks">
+    <div *ngFor="let fb of filteredFeedbacks" class="card mb-3 p-3 shadow">
+      <h5 class="text-primary">{{ fb.message }}</h5>
+    
+  
+      <button (click)="deleteFeedback(fb.id)"
+      class="btn btn-danger btn-sm"
+      style="padding: 0.2rem; font-size: 0.75rem; display: inline-flex; align-items: center; width: auto;">
+<i class="fa fa-trash"></i>
+</button>
+
+
+
+
+  
+      <div *ngIf="fb.reacts && fb.reacts.length > 0">
+        <strong>Réactions:</strong>
+        <ul>
+          <li *ngFor="let react of fb.reacts">{{ react.reaction || 'No Reaction' }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <ng-template #noFeedbacks>
+    <p class="text-center text-muted">Aucun feedback disponible.</p>
+  </ng-template>
+  
+  <!-- Success Alert -->
+  <div *ngIf="successMessage" class="alert alert-success mt-3">
+    {{ successMessage }}
+  </div>
+  
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+  
