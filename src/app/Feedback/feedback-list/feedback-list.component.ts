@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone } from '@angular/core';
 import { Feedback } from 'src/app/Core/Models/feedback';
 import { FeedbackService } from 'src/app/services/feedback.service';
+import { ReactService } from 'src/app/services/react.service';
 
 @Component({
   selector: 'app-feedback-list',
@@ -9,12 +10,19 @@ import { FeedbackService } from 'src/app/services/feedback.service';
 })
 export class FeedbackListComponent {
   feedbacks: Feedback[] = [];
-  filteredFeedbacks: Feedback[] = []; // Stores filtered feedbacks
-  successMessage: string = ''; // Declare success message
-  errorMessage: string = ''; // Declare error message
-  searchQuery: string = ''; // Stores the user's search input
+  filteredFeedbacks: Feedback[] = [];
+  successMessage: string = '';
+  errorMessage: string = '';
+  searchQuery: string = '';
+  isAdmin: boolean = true;
+  selectedReactId: number | null = null; // Store the selected reaction for deletion
 
-  constructor(private feedbackService: FeedbackService) {}
+  constructor(
+    private feedbackService: FeedbackService,
+    private reactService: ReactService,
+    private cdRef: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
 
   ngOnInit(): void {
     this.getAllFeedbacks();
@@ -25,9 +33,9 @@ export class FeedbackListComponent {
       next: (data) => {
         this.feedbacks = data.map(feedback => ({
           ...feedback,
-          reacts: feedback.reacts || []  // Ensures reacts is always an array
+          reacts: feedback.reacts || []  
         }));
-        this.filteredFeedbacks = [...this.feedbacks]; // Initially, all feedbacks are shown
+        this.filteredFeedbacks = [...this.feedbacks];
         console.log('Feedbacks:', this.feedbacks);
       },
       error: (err) => {
@@ -36,42 +44,27 @@ export class FeedbackListComponent {
     });
   }
 
-  filterFeedbacks() {
-    if (!this.searchQuery) {
-      this.filteredFeedbacks = [...this.feedbacks]; // If no search query, show all feedbacks
-      return;
-    }
-  
-    const lowerCaseQuery = this.searchQuery.toLowerCase();
-  
-    // Filter feedbacks based on message or formatted date
-    this.filteredFeedbacks = this.feedbacks.filter(fb => {
-      const fbDate = new Date(fb.date); // Convert date to Date object
-      const formattedDate = fbDate.toLocaleDateString(); // Format date as a readable string
-  
-      // Check if feedback's message or formatted date contains the search query
-      return fb.message.toLowerCase().includes(lowerCaseQuery) || 
-             formattedDate.includes(lowerCaseQuery); // Compare with formatted date
-    });
-  }
-  
-  
-
   deleteFeedback(id: number | undefined) {
     if (id !== undefined) {
       this.feedbackService.deleteFeedback(id.toString()).subscribe({
         next: () => {
           // Remove feedback from the list after successful deletion
           this.feedbacks = this.feedbacks.filter(fb => fb.id !== id);
-          this.successMessage = 'Feedback deleted successfully!'; // Set success message
+          this.filteredFeedbacks = this.filteredFeedbacks.filter(fb => fb.id !== id); // Update filtered list
+          this.successMessage = 'Feedback deleted successfully!';
           this.errorMessage = ''; // Clear any previous error message
 
           // Show success alert
           alert('Feedback deleted successfully!');
+          
+          // Update view without refresh
+          this.ngZone.run(() => {
+            this.cdRef.detectChanges();
+          });
         },
         error: (err) => {
           console.error('Error deleting feedback:', err);
-          this.errorMessage = 'Failed to delete feedback'; // Set error message
+          this.errorMessage = 'Failed to delete feedback';
           this.successMessage = ''; // Clear any previous success message
 
           // Show error alert
@@ -80,4 +73,71 @@ export class FeedbackListComponent {
       });
     }
   }
+
+  deleteReact(reactId: number) {
+    if (reactId !== null) {
+      this.reactService.deleteReact(reactId).subscribe({
+        next: () => {
+          // Successfully deleted, now update the feedback's reacts list
+          this.feedbacks.forEach(fb => {
+            fb.reacts = fb.reacts.filter(react => react.id !== reactId);
+          });
+          // Set success message
+          this.successMessage = 'Reaction deleted successfully!';
+          this.errorMessage = '';
+          
+          // Ensure Angular detects the changes
+          this.ngZone.run(() => {
+            this.cdRef.detectChanges();
+          });
+          
+          // Hide the popup
+          this.selectedReactId = null;
+        },
+        error: (err) => {
+          console.error('Error deleting reaction:', err);
+          this.errorMessage = 'Failed to delete reaction';
+          this.successMessage = '';
+        }
+      });
+    }
+  }
+  
+
+  filterFeedbacks() {
+    if (!this.searchQuery) {
+      this.filteredFeedbacks = [...this.feedbacks];
+      return;
+    }
+  
+    const lowerCaseQuery = this.searchQuery.toLowerCase();
+  
+    this.filteredFeedbacks = this.feedbacks.filter(fb => {
+      const fbDate = new Date(fb.date);
+      const formattedDate = fbDate.toLocaleDateString();
+  
+      return fb.message.toLowerCase().includes(lowerCaseQuery) || 
+             formattedDate.includes(lowerCaseQuery);
+    });
+  }
+
+
+  showReactionsPopup: boolean = false;
+  selectedReactions: any[] = [];
+  
+  openReactionsPopup(reacts: any[]) {
+    this.selectedReactions = reacts;
+    this.showReactionsPopup = true;
+  }
+  
+  closeReactionsPopup() {
+    this.selectedReactions = [];
+    this.showReactionsPopup = false;
+  }
+  confirmDeleteReaction(id: number) {
+    this.selectedReactId = id;
+    this.showReactionsPopup = false; // Close popup before confirming
+  }
+    
+
 }
