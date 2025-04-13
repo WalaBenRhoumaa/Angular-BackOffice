@@ -43,8 +43,8 @@ export class FeedbackListComponent {
     }
   
     const lowerCaseQuery = this.searchQuery.toLowerCase();
-    
-    // Attempt to match search query against both the message and the formatted date
+  
+    // Filter feedbacks based on message or formatted date
     this.filteredFeedbacks = this.feedbacks.filter(fb => {
       const fbDate = new Date(fb.date); // Convert date to Date object
       const formattedDate = fbDate.toLocaleDateString(); // Format date as a readable string
@@ -54,6 +54,7 @@ export class FeedbackListComponent {
              formattedDate.includes(lowerCaseQuery); // Compare with formatted date
     });
   }
+  
   
 
   deleteFeedback(id: number | undefined) {

@@ -1,33 +1,34 @@
 <div class="search-container mb-3">
-    <input 
-      type="text" 
-     
-      (input)="filterFeedbacks()" 
-      class="form-control" 
-      placeholder="Search feedback by word or date">
-  </div>
+  <input 
+  type="text" 
+  [(ngModel)]="searchQuery" 
+  (input)="filterFeedbacks()" 
+  class="form-control" 
+  placeholder="Search feedback by word or date">
   
   <div *ngIf="filteredFeedbacks && filteredFeedbacks.length > 0; else noFeedbacks">
     <div *ngFor="let fb of filteredFeedbacks" class="card mb-3 p-3 shadow">
       <h5 class="text-primary">{{ fb.message }}</h5>
     
   
-      <button (click)="deleteFeedback(fb.id)"
-      class="btn btn-danger btn-sm"
-      style="padding: 0.2rem; font-size: 0.75rem; display: inline-flex; align-items: center; width: auto;">
-<i class="fa fa-trash"></i>
-</button>
+      <button (click)="deleteFeedback(fb.id)" class="delete-icon-btn">
+        <i class="fa fa-trash"></i>
+      </button>
+      
 
 
 
 
   
-      <div *ngIf="fb.reacts && fb.reacts.length > 0">
-        <strong>Réactions:</strong>
-        <ul>
-          <li *ngFor="let react of fb.reacts">{{ react.reaction || 'No Reaction' }}</li>
-        </ul>
-      </div>
+      <div *ngIf="fb.reacts && fb.reacts.length > 0" class="reaction-section">
+        <strong class="reaction-label">Réactions:</strong>
+  <ul>
+    <li *ngFor="let react of fb.reacts" class="reaction-text">
+      {{ react.reaction || 'No Reaction' }}
+    </li>
+  </ul>
+</div>
+
     </div>
   </div>
   
